@@ -1,0 +1,99 @@
+using System;
+using System.Collections.Generic;
+
+// ==========================================
+// CLASE BASE ABSTRACTA: Notification
+// ==========================================
+// Una clase abstracta NO se puede instanciar directamente.
+// Sirve como modelo para las clases hijas (Email, SMS, Push).
+// Define propiedades comunes y un método abstracto Send()
+// que cada subclase implementará con su propio comportamiento.
+//
+public abstract class Notification
+{
+    public string Recipient { get; set; } // A quién va dirigida
+    public string Message { get; set; }   // Contenido del mensaje
+
+    // Método abstracto: cada tipo de notificación lo implementará distinto.
+    public abstract void Send();
+}
+
+// ==========================================
+// SUBCLASE: EmailNotification
+// ==========================================
+// Implementa Send() con su propio mensaje.
+// Esta clase hereda Recipient y Message de la clase base.
+//
+public class EmailNotification : Notification
+{
+    public override void Send()
+    {
+        Console.WriteLine($"[EMAIL] Enviando correo a {Recipient}: {Message}");
+    }
+}
+
+// ==========================================
+// SUBCLASE: SmsNotification
+// ==========================================
+public class SmsNotification : Notification
+{
+    public override void Send()
+    {
+        Console.WriteLine($"[SMS] Enviando SMS a {Recipient}: {Message}");
+    }
+}
+
+// ==========================================
+// SUBCLASE: PushNotification
+// ==========================================
+public class PushNotification : Notification
+{
+    public override void Send()
+    {
+        Console.WriteLine($"[PUSH] Enviando notificación push a {Recipient}: {Message}");
+    }
+}
+
+// ==========================================
+// CLASE: NotificationService
+// ==========================================
+// Esta clase demuestra POLIMORFISMO.
+// Puede recibir una lista de "Notification", y al llamar Send(),
+// se ejecuta la versión correcta según el tipo real del objeto.
+//
+public class NotificationService
+{
+    // Método que recorre todas las notificaciones y las envía.
+    public void SendBatch(List<Notification> notifications)
+    {
+        foreach (var notification in notifications)
+        {
+            // Polimorfismo en acción:
+            // aunque el tipo declarado es "Notification",
+            // en tiempo de ejecución se ejecuta el Send() correspondiente
+            // a la subclase (Email, SMS, Push, etc.).
+            notification.Send();
+        }
+    }
+}
+
+// ==========================================
+// PROGRAMA PRINCIPAL
+// ==========================================
+public class ProgramActivity2
+{
+    public static void Main(string[] args)
+    {
+        // Creamos una lista de notificaciones de distintos tipos.
+        var notifications = new List<Notification>
+        {
+            new EmailNotification { Recipient = "user1@example.com", Message = "Bienvenido al sistema!" },
+            new SmsNotification { Recipient = "+5493411234567", Message = "Tu código es 1234" },
+            new PushNotification { Recipient = "user_device_01", Message = "Tienes un nuevo mensaje" }
+        };
+
+        // Creamos el servicio y enviamos todas juntas.
+        var service = new NotificationService();
+        service.SendBatch(notifications);
+    }
+}
