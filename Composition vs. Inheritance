@@ -1,99 +1,129 @@
 using System;
-using System.Collections.Generic;
 
 // ==========================================
-// CLASE BASE ABSTRACTA: Notification
+// PARTE A — Por qué la herencia es un problema
 // ==========================================
-// Una clase abstracta NO se puede instanciar directamente.
-// Sirve como modelo para las clases hijas (Email, SMS, Push).
-// Define propiedades comunes y un método abstracto Send()
-// que cada subclase implementará con su propio comportamiento.
 //
-public abstract class Notification
-{
-    public string Recipient { get; set; } // A quién va dirigida
-    public string Message { get; set; }   // Contenido del mensaje
+// Si creamos una jerarquía así:
+//   Character -> Warrior -> FlyingWarrior
+//   Character -> Mage -> FlyingMage
+//   Character -> WarriorMage (que ataca y lanza hechizos)
+//
+// Terminamos con una "explosión" de clases combinadas.
+// Cada nueva habilidad requiere crear una subclase nueva.
+// Con el tiempo es imposible mantener.
+//
+// ==========================================
+// PARTE B — Composición (solución flexible)
+// ==========================================
 
-    // Método abstracto: cada tipo de notificación lo implementará distinto.
-    public abstract void Send();
+// Interfaz para los comportamientos de ataque.
+// Cualquier clase que implemente IAttackBehavior puede "atacar".
+public interface IAttackBehavior
+{
+    void Attack();
 }
 
-// ==========================================
-// SUBCLASE: EmailNotification
-// ==========================================
-// Implementa Send() con su propio mensaje.
-// Esta clase hereda Recipient y Message de la clase base.
-//
-public class EmailNotification : Notification
+// Interfaz para los comportamientos de movimiento.
+public interface IMovementBehavior
 {
-    public override void Send()
+    void Move();
+}
+
+// Implementaciones concretas de ataques:
+public class SwordAttack : IAttackBehavior
+{
+    public void Attack()
     {
-        Console.WriteLine($"[EMAIL] Enviando correo a {Recipient}: {Message}");
+        Console.WriteLine("Ataca con una espada 🗡️");
+    }
+}
+
+public class MagicAttack : IAttackBehavior
+{
+    public void Attack()
+    {
+        Console.WriteLine("Lanza un hechizo mágico ✨");
+    }
+}
+
+// Implementaciones concretas de movimiento:
+public class WalkingMovement : IMovementBehavior
+{
+    public void Move()
+    {
+        Console.WriteLine("Camina sobre el suelo 🚶‍♂️");
+    }
+}
+
+public class FlyingMovement : IMovementBehavior
+{
+    public void Move()
+    {
+        Console.WriteLine("Vuela por los cielos 🕊️");
     }
 }
 
 // ==========================================
-// SUBCLASE: SmsNotification
+// CLASE PRINCIPAL: Character
 // ==========================================
-public class SmsNotification : Notification
-{
-    public override void Send()
-    {
-        Console.WriteLine($"[SMS] Enviando SMS a {Recipient}: {Message}");
-    }
-}
-
-// ==========================================
-// SUBCLASE: PushNotification
-// ==========================================
-public class PushNotification : Notification
-{
-    public override void Send()
-    {
-        Console.WriteLine($"[PUSH] Enviando notificación push a {Recipient}: {Message}");
-    }
-}
-
-// ==========================================
-// CLASE: NotificationService
-// ==========================================
-// Esta clase demuestra POLIMORFISMO.
-// Puede recibir una lista de "Notification", y al llamar Send(),
-// se ejecuta la versión correcta según el tipo real del objeto.
+// No tiene subclases. En cambio, contiene (por composición)
+// referencias a objetos de comportamiento.
 //
-public class NotificationService
+public class Character
 {
-    // Método que recorre todas las notificaciones y las envía.
-    public void SendBatch(List<Notification> notifications)
+    private readonly IAttackBehavior _attackBehavior;
+    private readonly IMovementBehavior _movementBehavior;
+    private readonly string _name;
+
+    // Constructor: se "inyectan" los comportamientos al crear el personaje.
+    public Character(string name, IAttackBehavior attack, IMovementBehavior movement)
     {
-        foreach (var notification in notifications)
-        {
-            // Polimorfismo en acción:
-            // aunque el tipo declarado es "Notification",
-            // en tiempo de ejecución se ejecuta el Send() correspondiente
-            // a la subclase (Email, SMS, Push, etc.).
-            notification.Send();
-        }
+        _name = name;
+        _attackBehavior = attack;
+        _movementBehavior = movement;
+    }
+
+    // Métodos que delegan la acción al comportamiento correspondiente.
+    public void PerformAttack()
+    {
+        Console.Write($"{_name}: ");
+        _attackBehavior.Attack();
+    }
+
+    public void PerformMove()
+    {
+        Console.Write($"{_name}: ");
+        _movementBehavior.Move();
     }
 }
 
 // ==========================================
 // PROGRAMA PRINCIPAL
 // ==========================================
-public class ProgramActivity2
+public class ProgramActivity3
 {
     public static void Main(string[] args)
     {
-        // Creamos una lista de notificaciones de distintos tipos.
-        var notifications = new List<Notification>
-        {
-            new EmailNotification { Recipient = "user1@example.com", Message = "Bienvenido al sistema!" },
-            new SmsNotification { Recipient = "+5493411234567", Message = "Tu código es 1234" },
-            new PushNotification { Recipient = "user_device_01", Message = "Tienes un nuevo mensaje" }
-        };
+        // Creamos personajes combinando comportamientos libremente:
 
-        // Creamos el servicio y enviamos todas juntas.
-        var service = new NotificationService();
-        service.SendBatch(notifications);
+        // Un guerrero que camina
+        var warrior = new Character("Guerrero", new SwordAttack(), new WalkingMovement());
+
+        // Un mago que vuela
+        var mage = new Character("Mago", new MagicAttack(), new FlyingMovement());
+
+        // Un guerrero volador (sin necesidad de crear una nueva subclase)
+        var flyingWarrior = new Character("Guerrero Volador", new SwordAttack(), new FlyingMovement());
+
+        // Probamos las acciones
+        warrior.PerformMove();
+        warrior.PerformAttack();
+
+        mage.PerformMove();
+        mage.PerformAttack();
+
+        flyingWarrior.PerformMove();
+        flyingWarrior.PerformAttack();
     }
 }
